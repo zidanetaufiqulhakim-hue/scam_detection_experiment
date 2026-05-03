@@ -1,0 +1,37 @@
+artifact_path: mlflow-artifacts:/1/models/m-07bc51284d6c4780bfe3bf3fee2069ee/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.transformers
+    python_version: 3.10.19
+  transformers:
+    code: null
+    components:
+    - tokenizer
+    instance_type: TextClassificationPipeline
+    peft_adaptor: peft
+    pipeline_model_type: DistilBertForSequenceClassification
+    source_model_name: distilbert-base-multilingual-cased
+    source_model_revision: 45c032ab32cc946ad88a166f7cb282f58c753c2e
+    task: text-classification
+    tokenizer_name: distilbert-base-multilingual-cased
+    tokenizer_revision: 45c032ab32cc946ad88a166f7cb282f58c753c2e
+    tokenizer_type: BertTokenizer
+    torch_dtype: torch.float32
+    transformers_version: 5.7.0
+is_signature_from_type_hint: false
+mlflow_version: 3.11.1
+model_id: m-07bc51284d6c4780bfe3bf3fee2069ee
+model_size_bytes: 3569399
+model_uuid: m-07bc51284d6c4780bfe3bf3fee2069ee
+prompts: null
+run_id: 0783e27cccd94747bec51d71e5731cd8
+signature:
+  inputs: '[{"type": "string", "required": true}]'
+  outputs: '[{"type": "string", "name": "label", "required": true}, {"type": "double",
+    "name": "score", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-05-03 06:24:48.303185'
