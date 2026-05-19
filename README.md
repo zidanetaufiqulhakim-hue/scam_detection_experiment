@@ -2,7 +2,7 @@
 
 This project fine-tunes multilingual transformer models to detect scam and phishing-style messages with high sensitivity while staying practical for low-cost deployment. The core idea is simple: missing a scam is expensive, so the modeling workflow prioritizes recall, but the final candidate also needs a small memory footprint and predictable inference latency.
 
-The repository documents the full experimentation path in notebooks: multi-source data collection, dataset quality checks, class balancing, label-noise reduction, parameter-efficient fine-tuning, and holdout evaluation. The current leading deployment candidate is a LoRA-tuned MiniLM model because it offers the best overall trade-off between scam recall and model size.
+The repository documents the full experimentation path in notebooks: multi-source data collection, dataset quality checks, class balancing, label-noise reduction, parameter-efficient fine-tuning, and holdout evaluation. The current leading deployment candidate is a reduced-precision MiniLM adapter model, documented here as a QLoRA-style setup, because it offers the best overall trade-off between scam recall and model size.
 
 ## Why This Project Matters
 
@@ -36,6 +36,7 @@ The repository documents the full experimentation path in notebooks: multi-sourc
    - `microsoft/Multilingual-MiniLM-L12-H384`
    - `distilbert-base-multilingual-cased`
    - Used LoRA adapters for parameter-efficient fine-tuning on a local Mac environment.
+   - For MiniLM, loaded the base model in `float16` rather than full 32-bit precision to reduce memory footprint during training and serving.
    - Tracked experiments with MLflow for reproducibility and comparison.
 
 6. **Evaluate for both ML quality and deployment readiness**
@@ -47,7 +48,7 @@ The repository documents the full experimentation path in notebooks: multi-sourc
 
 | Model | Test Accuracy | Test Precision | Test Recall | Test F1 | p50 Latency | Throughput | Memory Footprint |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| MiniLM + LoRA | 97.51% | 98.02% | 97.05% | 97.53% | 27.50 ms | 129.66 req/s | 226.97 MB |
+| MiniLM + QLoRA-style reduced precision | 97.51% | 98.02% | 97.05% | 97.53% | 27.50 ms | 129.66 req/s | 226.97 MB |
 | Distil mBERT + LoRA | 97.32% | 98.16% | 96.53% | 97.33% | 13.43 ms | 231.50 req/s | 519.62 MB |
 
 ## Deployment Takeaway
@@ -56,18 +57,21 @@ MiniLM is the strongest deployment candidate in the current repo.
 
 - It achieved the best scam recall on the unseen test set: `97.05%`.
 - It also has a much smaller runtime footprint than Distil mBERT: `226.97 MB` vs `519.62 MB`.
+- Part of that footprint advantage comes from loading the MiniLM base model in `float16` instead of full 32-bit precision.
 - Distil mBERT is faster, but MiniLM offers a better balance for a cloud service where both sensitivity and cost matter.
 
 In other words: Distil mBERT wins on raw inference speed, while MiniLM wins on the combination of recall, footprint, and operational efficiency.
+
+Note: the MiniLM training notebook uses reduced-precision LoRA with `float16` weights and labels that experiment as `qlora_minilm` in MLflow. Full QLoRA usually refers to LoRA on top of quantized 4-bit base weights, which is a stronger form of compression than what is currently implemented here.
 
 ## Repo Guide
 
 - [notebooks/01_data_preparation.ipynb](./notebooks/01_data_preparation.ipynb): multi-source data collection, schema unification, balancing, and split creation
 - [notebooks/02_data_cleanning.ipynb](./notebooks/02_data_cleanning.ipynb): label cleaning and CSV export
-- [notebooks/03_distil_mBERT.ipynb](./notebooks/03_distil_mBERT.ipynb): Distil mBERT LoRA training
-- [notebooks/04_miniLM_trainning.ipynb](./notebooks/04_miniLM_trainning.ipynb): MiniLM LoRA training
-- [notebooks/05_miniLM_evaluation.ipynb](./notebooks/05_miniLM_evaluation.ipynb): MiniLM holdout evaluation
-- [notebooks/06_distilmBERT_evaluation.ipynb](./notebooks/06_distilmBERT_evaluation.ipynb): Distil mBERT holdout evaluation
+- [notebooks/02_distil_mBERT_trainning.ipynb](./notebooks/02_distil_mBERT_trainning.ipynb): Distil mBERT LoRA training
+- [notebooks/03_miniLM_trainning.ipynb](./notebooks/03_miniLM_trainning.ipynb): MiniLM QLoRA-style reduced-precision training
+- [notebooks/04_miniLM_evaluation.ipynb](./notebooks/04_miniLM_evaluation.ipynb): MiniLM holdout evaluation
+- [notebooks/05_distilmBERT_evaluation.ipynb](./notebooks/05_distilmBERT_evaluation.ipynb): Distil mBERT holdout evaluation
 
 ## Frameworks and Stack
 
@@ -77,6 +81,7 @@ In other words: Distil mBERT wins on raw inference speed, while MiniLM wins on t
 - Hugging Face Datasets
 - Hugging Face Transformers
 - PEFT / LoRA
+- Reduced-precision `float16` loading for MiniLM
 - Scikit-learn
 - Cleanlab
 - PyTorch

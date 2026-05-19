@@ -286,7 +286,7 @@ def clean_02():
 
 
 def clean_03():
-    path, nb = load_notebook("03_distil_mBERT.ipynb")
+    path, nb = load_notebook("02_distil_mBERT_trainning.ipynb")
     if nb["cells"] and first_line(nb["cells"][0]) == "# Distil mBERT Fine-Tuning":
         return
     old = nb["cells"]
@@ -428,12 +428,12 @@ def clean_03():
 
 
 def clean_04():
-    path, nb = load_notebook("04_miniLM_trainning.ipynb")
-    if nb["cells"] and first_line(nb["cells"][0]) == "# MiniLM LoRA Training":
+    path, nb = load_notebook("03_miniLM_trainning.ipynb")
+    if nb["cells"] and first_line(nb["cells"][0]) == "# MiniLM QLoRA-Style Training":
         return
-    if nb["cells"] and first_line(nb["cells"][0]) == "# MiniLM QLoRA Training":
+    if nb["cells"] and first_line(nb["cells"][0]) == "# MiniLM LoRA Training":
         nb["cells"][0]["source"] = [
-            "# MiniLM LoRA Training\n",
+            "# MiniLM QLoRA-Style Training\n",
             "\n",
             "This notebook fine-tunes `microsoft/Multilingual-MiniLM-L12-H384` for scam detection. "
             "The target is a model with high scam recall that is still small enough for inexpensive cloud deployment.",
@@ -443,7 +443,7 @@ def clean_04():
     old = nb["cells"]
     nb["cells"] = [
         md(
-            "# MiniLM LoRA Training\n\n"
+            "# MiniLM QLoRA-Style Training\n\n"
             "This notebook fine-tunes `microsoft/Multilingual-MiniLM-L12-H384` for scam detection. "
             "The target is a model with high scam recall that is still small enough for inexpensive cloud deployment."
         ),
@@ -525,9 +525,12 @@ def clean_04():
             "print(f'Validation Set:{tokenized_ds_val}\\n')\n",
         ),
         md(
-            "## 5. Configure LoRA Fine-Tuning\n\n"
+            "## 5. Configure QLoRA-Style Fine-Tuning\n\n"
             "The base model stays mostly frozen while trainable low-rank adapters learn the task. "
-            "This reduces memory pressure and makes local fine-tuning practical on Apple Silicon."
+            "In this run, the MiniLM base model is loaded in `float16` instead of full 32-bit precision, "
+            "which reduces weight memory roughly by half and makes local training cheaper on Apple Silicon. "
+            "Strictly speaking, full QLoRA usually adds 4-bit quantization; this notebook uses the same "
+            "resource-efficiency idea through reduced precision plus LoRA adapters."
         ),
         set_source(
             old[11],
@@ -594,7 +597,8 @@ def clean_04():
         old[14],
         md(
             "## 7. Register the Run in MLflow\n\n"
-            "Logging the final adapter and metrics makes the training run reproducible and supports later deployment selection."
+            "Logging the final adapter and metrics makes the training run reproducible and supports later deployment selection. "
+            "The MLflow run is named `qlora_minilm` to distinguish this reduced-precision MiniLM experiment from the standard LoRA baselines."
         ),
         old[16],
     ]
@@ -769,12 +773,12 @@ def main():
     clean_03()
     clean_04()
     clean_eval(
-        "05_miniLM_evaluation.ipynb",
+        "04_miniLM_evaluation.ipynb",
         "models:/m-0ec65a1c22bc4ab1ada2f5ddb7980a40",
         "MiniLM",
     )
     clean_eval(
-        "06_distilmBERT_evaluation.ipynb",
+        "05_distilmBERT_evaluation.ipynb",
         "models:/m-1b441e092a3f43869dea8d3abf3e4ad8",
         "Distil mBERT",
     )
